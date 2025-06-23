@@ -1,0 +1,9 @@
+services:
+  dev-environment:
+    build:
+      context: .
+      dockerfile: simple.Dockerfile
+    volumes:
+      - .:/app
+    container_name: supplychain-dev
+    tty: true

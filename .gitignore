@@ -1,0 +1,15 @@
+# Ignore build output
+bin/
+obj/
+*.dll
+*.pdb
+*.cache
+
+# Ignore local SQLite database
+*.db
+*.db-shm
+*.db-wal
+
+# macOS and VSCode crap
+.DS_Store
+.vscode/*.bak
