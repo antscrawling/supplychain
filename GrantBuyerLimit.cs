@@ -9,9 +9,9 @@ using Core.Models;
 
 namespace SupplyChainFinance
 {
-    class GrantBuyerLimit
+    public class GrantBuyerLimit
     {
-        static void Main(string[] args)
+        public static void Execute()
         {
             // Configure services
             var services = new ServiceCollection();

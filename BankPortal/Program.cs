@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Core.Data;
 using Core.Services;
 using Core.Models;
+using SupplyChainFinance;
 
 namespace BankPortal
 {
@@ -322,6 +323,7 @@ namespace BankPortal
             Console.WriteLine("1. View All Limits (Bank View)");
             Console.WriteLine("2. Grant Facility to Any Customer");
             Console.WriteLine("3. Manage Buyer-Specific Limits");
+            Console.WriteLine("4. Launch GrantBuyerLimit Program");
             Console.WriteLine("0. Back");
             
             Console.Write("\nSelect an option: ");
@@ -337,6 +339,9 @@ namespace BankPortal
                     break;
                 case "3":
                     ManageBuyerLimits();
+                    break;
+                case "4":
+                    LaunchGrantBuyerLimit();
                     break;
                 case "0":
                     return;
@@ -1001,6 +1006,38 @@ namespace BankPortal
             Console.ReadKey();
         }
         
+        private void LaunchGrantBuyerLimit()
+        {
+            Console.Clear();
+            Console.WriteLine("GRANT BUYER LIMIT");
+            Console.WriteLine("=================\n");
+            
+            Console.WriteLine("This will run the integrated GrantBuyerLimit functionality for automated limit management.");
+            Console.WriteLine("The GrantBuyerLimit provides:");
+            Console.WriteLine("- Automated buyer-seller limit allocation");
+            Console.WriteLine("- Transaction-based limit granting");
+            Console.WriteLine("- Additional facility management options");
+            
+            Console.Write("\nDo you want to run GrantBuyerLimit? (Y/N): ");
+            string? response = Console.ReadLine()?.Trim().ToUpper();
+            
+            if (response == "Y")
+            {
+                try
+                {
+                    Console.WriteLine("\nRunning GrantBuyerLimit...\n");
+                    GrantBuyerLimit.Execute();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error running GrantBuyerLimit: {ex.Message}");
+                }
+            }
+            
+            Console.WriteLine("\nPress any key to continue...");
+            Console.ReadKey();
+        }
+        
         private void GrantFacilityToCustomer()
         {
             if (_limitService == null || _userService == null)
@@ -1184,9 +1221,95 @@ namespace BankPortal
                 return;
             }
             
+            // Ask for counterparty information
+            Console.Write("\nAdd a counterparty for this customer? (Y/N): ");
+            string? addCounterparty = Console.ReadLine()?.Trim().ToUpper();
+            
+            if (addCounterparty == "Y")
+            {
+                Console.Write("Enter counterparty name: ");
+                string? counterpartyName = Console.ReadLine()?.Trim();
+                
+                if (!string.IsNullOrWhiteSpace(counterpartyName))
+                {
+                    Console.Write("Is this counterparty a Buyer? (Y/N): ");
+                    bool isBuyer = Console.ReadLine()?.Trim().ToUpper() == "Y";
+                    
+                    Console.Write("Is this counterparty a Seller? (Y/N): ");
+                    bool isSeller = Console.ReadLine()?.Trim().ToUpper() == "Y";
+                    
+                    // Save counterparty to database
+                    using (var scope = _services.CreateScope())
+                    {
+                        var context = scope.ServiceProvider.GetRequiredService<SupplyChainDbContext>();
+                        
+                        // Check if counterparty already exists
+                        var existingCounterparty = context.Counterparties
+                            .FirstOrDefault(c => c.Name.ToLower() == counterpartyName.ToLower());
+                            
+                        if (existingCounterparty == null)
+                        {
+                            var counterparty = new Counterparty
+                            {
+                                Name = counterpartyName,
+                                IsBuyer = isBuyer,
+                                IsSeller = isSeller
+                            };
+                            
+                            context.Counterparties.Add(counterparty);
+                            context.SaveChanges();
+                            Console.WriteLine($"Counterparty '{counterpartyName}' added successfully.");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Counterparty '{counterpartyName}' already exists.");
+                        }
+                    }
+                }
+            }
+            
             // Create initial facilities
             var facilities = new List<(FacilityType Type, decimal Limit, DateTime ReviewEndDate, int GracePeriodDays)>();
             
+            Console.Write("\nWould you like to add facilities now, or just create the credit limit? (F=Facilities, C=Credit Limit Only): ");
+            string? choice = Console.ReadLine()?.Trim().ToUpper();
+            
+            if (choice == "C")
+            {
+                // Create credit limit without facilities (as requested)
+                Console.Write("Enter master limit amount: ");
+                if (decimal.TryParse(Console.ReadLine(), out decimal masterLimitAmount) && masterLimitAmount > 0)
+                {
+                    var creditLimit = new CreditLimitInfo
+                    {
+                        OrganizationId = customer.Id,
+                        MasterLimit = masterLimitAmount,
+                        Organization = customer,
+                        LastReviewDate = DateTime.Now,
+                        NextReviewDate = DateTime.Now.AddYears(1)
+                    };
+                    
+                    // Create the credit limit with an empty facilities list
+                    var result = _limitService?.CreateCreditLimitWithFacilities(creditLimit, new List<Facility>());
+                    if (result != null && result.Success)
+                    {
+                        Console.WriteLine($"Credit limit of ${masterLimitAmount:N2} successfully created for {customer.Name}");
+                        Console.WriteLine("Facilities can be added later through the facility management options.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to create credit limit: {result?.Message ?? "Unknown error"}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid master limit amount.");
+                }
+                WaitForEnterKey();
+                return;
+            }
+            
+            // Original facility creation logic
             bool addMoreFacilities = true;
             decimal totalFacilities = 0;
             
