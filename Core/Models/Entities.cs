@@ -108,7 +108,7 @@ namespace Core.Models
         public int? CounterpartyId { get; set; } // New: for non-customer party
         public Counterparty? Counterparty { get; set; }
         public string Currency { get; set; } = "USD";
-        public InvoiceStatus Status { get; set; } = InvoiceStatus.Uploaded;
+        public string Status { get; set; } = "Uploaded";
         public DateTime? FundingDate { get; set; }
         public decimal? FundedAmount { get; set; }
         public decimal? DiscountRate { get; set; }

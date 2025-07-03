@@ -307,7 +307,7 @@ namespace Core.Data
                     SellerId = seller.Id,
                     BuyerId = buyer.Id,
                     Amount = 130000,
-                    Status = InvoiceStatus.Uploaded,
+                    Status = InvoiceStatusValues.Uploaded,
                     Description = "Q2 Product Shipment"
                 },
                 new Invoice
@@ -318,7 +318,7 @@ namespace Core.Data
                     SellerId = seller.Id,
                     BuyerId = buyer.Id,
                     Amount = 87500,
-                    Status = InvoiceStatus.Uploaded,
+                    Status = InvoiceStatusValues.Uploaded,
                     Description = "Marketing Services"
                 }
             };

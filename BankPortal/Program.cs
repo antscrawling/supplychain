@@ -373,13 +373,13 @@ namespace BankPortal
             switch (input)
             {
                 case "1":
-                    ReviewInvoicesByStatus(InvoiceStatus.Uploaded, "New");
+                    ReviewInvoicesByStatus(InvoiceStatusValues.Uploaded, "New");
                     break;
                 case "2":
-                    ReviewInvoicesByStatus(InvoiceStatus.Validated, "Validated");
+                    ReviewInvoicesByStatus(InvoiceStatusValues.Validated, "Validated");
                     break;
                 case "3":
-                    ReviewInvoicesByStatus(InvoiceStatus.BuyerUploaded, "Buyer Uploaded");
+                    ReviewInvoicesByStatus(InvoiceStatusValues.BuyerUploaded, "Buyer Uploaded");
                     break;
                 case "0":
                     return;
@@ -391,7 +391,7 @@ namespace BankPortal
             }
         }
         
-        private void ReviewInvoicesByStatus(InvoiceStatus status, string statusName)
+        private void ReviewInvoicesByStatus(string status, string statusName)
         {
             if (_invoiceService == null)
                 return;
@@ -452,25 +452,25 @@ namespace BankPortal
             
             Console.WriteLine("\nOptions:");
             
-            if (invoice.Status == InvoiceStatus.Uploaded)
+            if (invoice.Status == InvoiceStatusValues.Uploaded)
             {
                 Console.WriteLine("1. Validate Invoice");
                 Console.WriteLine("2. Reject Invoice");
             }
-            else if (invoice.Status == InvoiceStatus.BuyerUploaded)
+            else if (invoice.Status == InvoiceStatusValues.BuyerUploaded)
             {
                 Console.WriteLine("1. Validate Invoice");
                 Console.WriteLine("2. Make Early Payment Offer to Seller");
                 Console.WriteLine("3. Reject Invoice");
             }
-            else if (invoice.Status == InvoiceStatus.Validated)
+            else if (invoice.Status == InvoiceStatusValues.Validated)
             {
                 Console.WriteLine("1. Approve Invoice");
                 Console.WriteLine("2. Request Buyer Approval for Liability Transfer");
                 Console.WriteLine("3. Make Early Payment Offer to Seller");
                 Console.WriteLine("4. Reject Invoice");
             }
-            else if (invoice.Status == InvoiceStatus.BuyerApprovalPending)
+            else if (invoice.Status == InvoiceStatusValues.BuyerApprovalPending)
             {
                 Console.WriteLine("1. Check Buyer Approval Status");
                 if (invoice.BuyerApproved)
@@ -478,7 +478,7 @@ namespace BankPortal
                     Console.WriteLine("2. Process for Funding (Buyer Approved)");
                 }
             }
-            else if (invoice.Status == InvoiceStatus.SellerAcceptancePending)
+            else if (invoice.Status == InvoiceStatusValues.SellerAcceptancePending)
             {
                 Console.WriteLine("1. Check Seller Acceptance Status");
                 if (invoice.SellerAccepted)
@@ -486,7 +486,7 @@ namespace BankPortal
                     Console.WriteLine("2. Process for Funding (Seller Accepted)");
                 }
             }
-            else if (invoice.Status == InvoiceStatus.Approved)
+            else if (invoice.Status == InvoiceStatusValues.Approved)
             {
                 Console.WriteLine("1. Process for Funding");
             }
@@ -502,19 +502,19 @@ namespace BankPortal
             switch (input)
             {
                 case "1":
-                    if (invoice.Status == InvoiceStatus.Uploaded || invoice.Status == InvoiceStatus.BuyerUploaded)
+                    if (invoice.Status == InvoiceStatusValues.Uploaded || invoice.Status == InvoiceStatusValues.BuyerUploaded)
                     {
                         // Validate invoice
                         var validateResult = _invoiceService.ValidateInvoice(invoice.Id, _currentUser.Id);
                         Console.WriteLine($"\n{validateResult.Message}");
                     }
-                    else if (invoice.Status == InvoiceStatus.Validated)
+                    else if (invoice.Status == InvoiceStatusValues.Validated)
                     {
                         // Approve invoice
                         var approveResult = _invoiceService.ApproveInvoice(invoice.Id, _currentUser.Id);
                         Console.WriteLine($"\n{approveResult.Message}");
                     }
-                    else if (invoice.Status == InvoiceStatus.BuyerApprovalPending)
+                    else if (invoice.Status == InvoiceStatusValues.BuyerApprovalPending)
                     {
                         // Check status of buyer approval
                         if (invoice.BuyerApproved)
@@ -522,7 +522,7 @@ namespace BankPortal
                         else
                             Console.WriteLine("\nStill waiting for buyer approval.");
                     }
-                    else if (invoice.Status == InvoiceStatus.SellerAcceptancePending)
+                    else if (invoice.Status == InvoiceStatusValues.SellerAcceptancePending)
                     {
                         // Check status of seller acceptance
                         if (invoice.SellerAccepted)
@@ -530,13 +530,13 @@ namespace BankPortal
                         else
                             Console.WriteLine("\nStill waiting for seller acceptance.");
                     }
-                    else if (invoice.Status == InvoiceStatus.Approved)
+                    else if (invoice.Status == InvoiceStatusValues.Approved)
                     {
                         ProcessFundingForInvoice(invoice);
                     }
                     break;
                 case "2":
-                    if (invoice.Status == InvoiceStatus.Uploaded)
+                    if (invoice.Status == InvoiceStatusValues.Uploaded)
                     {
                         // Reject invoice
                         Console.Write("\nEnter rejection reason: ");
@@ -544,29 +544,29 @@ namespace BankPortal
                         var rejectResult = _invoiceService.RejectInvoice(invoice.Id, _currentUser.Id, reason);
                         Console.WriteLine($"\n{rejectResult.Message}");
                     }
-                    else if (invoice.Status == InvoiceStatus.BuyerUploaded)
+                    else if (invoice.Status == InvoiceStatusValues.BuyerUploaded)
                     {
                         // Make early payment offer to seller
                         MakeEarlyPaymentOffer(invoice);
                     }
-                    else if (invoice.Status == InvoiceStatus.Validated)
+                    else if (invoice.Status == InvoiceStatusValues.Validated)
                     {
                         // Request buyer approval
                         RequestBuyerApproval(invoice);
                     }
-                    else if ((invoice.Status == InvoiceStatus.BuyerApprovalPending && invoice.BuyerApproved) || 
-                             (invoice.Status == InvoiceStatus.SellerAcceptancePending && invoice.SellerAccepted))
+                    else if ((invoice.Status == InvoiceStatusValues.BuyerApprovalPending && invoice.BuyerApproved) || 
+                             (invoice.Status == InvoiceStatusValues.SellerAcceptancePending && invoice.SellerAccepted))
                     {
                         ProcessFundingForInvoice(invoice);
                     }
                     break;
                 case "3":
-                    if (invoice.Status == InvoiceStatus.Validated)
+                    if (invoice.Status == InvoiceStatusValues.Validated)
                     {
                         // Make early payment offer
                         MakeEarlyPaymentOffer(invoice);
                     }
-                    else if (invoice.Status == InvoiceStatus.BuyerUploaded)
+                    else if (invoice.Status == InvoiceStatusValues.BuyerUploaded)
                     {
                         // Reject invoice
                         Console.Write("\nEnter rejection reason: ");
@@ -576,7 +576,7 @@ namespace BankPortal
                     }
                     break;
                 case "4":
-                    if (invoice.Status == InvoiceStatus.Validated)
+                    if (invoice.Status == InvoiceStatusValues.Validated)
                     {
                         // Reject invoice
                         Console.Write("\nEnter rejection reason: ");
@@ -602,7 +602,7 @@ namespace BankPortal
             Console.WriteLine("PROCESS INVOICE FUNDING");
             Console.WriteLine("======================\n");
             
-            var approvedInvoices = _invoiceService.GetInvoicesByStatus(InvoiceStatus.Approved);
+            var approvedInvoices = _invoiceService.GetInvoicesByStatus(InvoiceStatusValues.Approved);
             
             if (!approvedInvoices.Any())
             {
@@ -1692,7 +1692,7 @@ namespace BankPortal
                         }
                         else
                         {
-                            Console.WriteLine($"Failed to create credit limit: {result.Message}");
+                            Console.WriteLine($"Failed to create credit limit: {result?.Message ?? "Unknown error"}");
                         }
                     }
                     else
@@ -2159,7 +2159,7 @@ namespace BankPortal
             };
             
             var userResult = _userService.CreateUser(user);
-            Console.WriteLine(userResult.Message);
+            Console.WriteLine(userResult?.Message ?? "Operation completed");
         }
 
         private void ProcessFundingForInvoice(Invoice invoice)
@@ -2616,7 +2616,7 @@ namespace BankPortal
 
             try
             {
-                var approvedInvoices = _invoiceService.GetInvoicesByStatus(InvoiceStatus.Approved);
+                var approvedInvoices = _invoiceService.GetInvoicesByStatus(InvoiceStatusValues.Approved);
                 if (!approvedInvoices.Any())
                 {
                     Console.WriteLine("No approved invoices available for financing.");
@@ -2680,7 +2680,7 @@ namespace BankPortal
 
             try
             {
-                var fundedInvoices = _invoiceService.GetInvoicesByStatus(InvoiceStatus.Funded);
+                var fundedInvoices = _invoiceService.GetInvoicesByStatus(InvoiceStatusValues.Funded);
                 if (!fundedInvoices.Any())
                 {
                     Console.WriteLine("No funded invoices available for payment processing.");

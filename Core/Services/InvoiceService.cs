@@ -95,7 +95,7 @@ namespace Core.Services
                     invoice.CounterpartyId = dbCounterparty.Id;
                 }
 
-                invoice.Status = InvoiceStatus.Uploaded;
+                invoice.Status = InvoiceStatusValues.Uploaded;
                 _context.Invoices.Add(invoice);
                 _context.SaveChanges();
 
@@ -177,7 +177,7 @@ namespace Core.Services
                     invoice.CounterpartyId = dbCounterparty.Id;
                 }
 
-                invoice.Status = InvoiceStatus.BuyerUploaded;
+                invoice.Status = InvoiceStatusValues.BuyerUploaded;
                 _context.Invoices.Add(invoice);
                 _context.SaveChanges();
 
@@ -240,7 +240,7 @@ namespace Core.Services
             }
         }
 
-        public List<Invoice> GetInvoicesByStatus(InvoiceStatus status)
+        public List<Invoice> GetInvoicesByStatus(string status)
         {
             return _context.Invoices
                 .Include(i => i.Buyer)
@@ -258,10 +258,10 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId) 
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.Uploaded)
+                if (invoice.Status != InvoiceStatusValues.Uploaded)
                     return ServiceResult.Failed($"Cannot validate invoice with status {invoice.Status}");
 
-                invoice.Status = InvoiceStatus.Validated;
+                invoice.Status = InvoiceStatusValues.Validated;
                 _context.SaveChanges();
 
                 // Create notification for seller
@@ -298,10 +298,10 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId) 
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.Validated)
+                if (invoice.Status != InvoiceStatusValues.Validated)
                     return ServiceResult.Failed($"Cannot approve invoice with status {invoice.Status}. Invoice must be validated first.");
 
-                invoice.Status = InvoiceStatus.Approved;
+                invoice.Status = InvoiceStatusValues.Approved;
                 _context.SaveChanges();
 
                 // Create notification for seller
@@ -341,12 +341,12 @@ namespace Core.Services
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
                 // Check if invoice is in the right status for funding
-                bool canFund = invoice.Status == InvoiceStatus.Approved;
+                bool canFund = invoice.Status == InvoiceStatusValues.Approved;
                 
-                if (invoice.Status == InvoiceStatus.SellerAcceptancePending && invoice.SellerAccepted)
+                if (invoice.Status == InvoiceStatusValues.SellerAcceptancePending && invoice.SellerAccepted)
                     canFund = true;
                 
-                if (invoice.Status == InvoiceStatus.BuyerApprovalPending && invoice.BuyerApproved)
+                if (invoice.Status == InvoiceStatusValues.BuyerApprovalPending && invoice.BuyerApproved)
                     canFund = true;
                 
                 if (!canFund)
@@ -360,7 +360,7 @@ namespace Core.Services
                 decimal fundedAmount = invoice.Amount - discountAmount;
 
                 // Update invoice with funding details
-                invoice.Status = InvoiceStatus.Funded;
+                invoice.Status = InvoiceStatusValues.Funded;
                 invoice.FundingDate = fundingDetails.FundingDate;
                 invoice.FundedAmount = fundedAmount;
                 invoice.DiscountRate = fundingDetails.FinalDiscountRate;
@@ -489,7 +489,7 @@ namespace Core.Services
             // 2. Either seller has no direct relationship OR buyer has specifically requested to use their facility
             return buyerHasLimit && (
                 !sellerHasLimit || 
-                invoice.Status == InvoiceStatus.BuyerApprovalPending && invoice.BuyerApproved
+                invoice.Status == InvoiceStatusValues.BuyerApprovalPending && invoice.BuyerApproved
             );
         }
 
@@ -522,10 +522,10 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId)
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.Uploaded && invoice.Status != InvoiceStatus.Validated)
+                if (invoice.Status != InvoiceStatusValues.Uploaded && invoice.Status != InvoiceStatusValues.Validated)
                     return ServiceResult.Failed($"Cannot reject invoice with status {invoice.Status}");
 
-                invoice.Status = InvoiceStatus.Rejected;
+                invoice.Status = InvoiceStatusValues.Rejected;
                 _context.SaveChanges();
 
                 // Create notification for seller
@@ -562,7 +562,7 @@ namespace Core.Services
                 if (invoice == null)
                     return ServiceResult.Failed($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.Funded && invoice.Status != InvoiceStatus.PartiallyPaid)
+                if (invoice.Status != InvoiceStatusValues.Funded && invoice.Status != InvoiceStatusValues.PartiallyPaid)
                     return ServiceResult.Failed($"Invoice must be funded before payment, current status: {invoice.Status}");
 
                 // Validate amount
@@ -579,11 +579,11 @@ namespace Core.Services
                 
                 if (totalPaid < invoice.Amount)
                 {
-                    invoice.Status = InvoiceStatus.PartiallyPaid;
+                    invoice.Status = InvoiceStatusValues.PartiallyPaid;
                 }
                 else
                 {
-                    invoice.Status = InvoiceStatus.FullyPaid;
+                    invoice.Status = InvoiceStatusValues.FullyPaid;
                     invoice.PaymentDate = DateTime.Now;
                     
                     // Release limit utilization
@@ -631,14 +631,14 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId)
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.Approved)
+                if (invoice.Status != InvoiceStatusValues.Approved)
                     return ServiceResult.Failed($"Cannot request buyer approval for invoice with status {invoice.Status}. Invoice must be approved first.");
                 
                 if (invoice.Buyer == null || invoice.Seller == null)
                     return ServiceResult.Failed("Invoice has missing buyer or seller information");
 
                 // Update invoice status
-                invoice.Status = InvoiceStatus.BuyerApprovalPending;
+                invoice.Status = InvoiceStatusValues.BuyerApprovalPending;
                 _context.SaveChanges();
 
                 // Create notification for buyer with action required
@@ -675,7 +675,7 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId)
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.BuyerApprovalPending && invoice.Status != InvoiceStatus.Approved)
+                if (invoice.Status != InvoiceStatusValues.BuyerApprovalPending && invoice.Status != InvoiceStatusValues.Approved)
                     return ServiceResult.Failed($"Cannot request seller acceptance for invoice with status {invoice.Status}. Invoice must be approved or have buyer approval pending.");
                 
                 if (invoice.Buyer == null || invoice.Seller == null)
@@ -686,7 +686,7 @@ namespace Core.Services
                 decimal fundedAmount = invoice.Amount - discountAmount;
 
                 // Update invoice status
-                invoice.Status = InvoiceStatus.SellerAcceptancePending;
+                invoice.Status = InvoiceStatusValues.SellerAcceptancePending;
                 invoice.DiscountRate = proposedDiscountRate;
                 _context.SaveChanges();
 
@@ -729,7 +729,7 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId)
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.BuyerApprovalPending)
+                if (invoice.Status != InvoiceStatusValues.BuyerApprovalPending)
                     return ServiceResult.Failed($"Cannot approve invoice with status {invoice.Status}. Invoice must be pending buyer approval.");
                 
                 if (user.OrganizationId != invoice.BuyerId)
@@ -739,7 +739,7 @@ namespace Core.Services
                 invoice.BuyerApproved = true;
                 invoice.BuyerApprovalDate = DateTime.Now;
                 invoice.BuyerApprovalUserId = buyerUserId;
-                invoice.Status = InvoiceStatus.Approved; // Move back to approved state
+                invoice.Status = InvoiceStatusValues.Approved; // Move back to approved state
                 _context.SaveChanges();
 
                 // Mark all notifications for this invoice as actioned
@@ -796,14 +796,14 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId)
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.BuyerApprovalPending)
+                if (invoice.Status != InvoiceStatusValues.BuyerApprovalPending)
                     return ServiceResult.Failed($"Cannot reject invoice with status {invoice.Status}. Invoice must be pending buyer approval.");
                 
                 if (user.OrganizationId != invoice.BuyerId)
                     return ServiceResult.Failed("You don't have permission to reject this invoice");
 
                 // Update invoice
-                invoice.Status = InvoiceStatus.Rejected;
+                invoice.Status = InvoiceStatusValues.Rejected;
                 invoice.RejectionReason = reason;
                 _context.SaveChanges();
 
@@ -861,7 +861,7 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId)
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.SellerAcceptancePending)
+                if (invoice.Status != InvoiceStatusValues.SellerAcceptancePending)
                     return ServiceResult.Failed($"Cannot accept offer for invoice with status {invoice.Status}. Invoice must be pending seller acceptance.");
                 
                 if (user.OrganizationId != invoice.SellerId)
@@ -871,7 +871,7 @@ namespace Core.Services
                 invoice.SellerAccepted = true;
                 invoice.SellerAcceptanceDate = DateTime.Now;
                 invoice.SellerAcceptanceUserId = sellerUserId;
-                invoice.Status = InvoiceStatus.Approved; // Move back to approved state
+                invoice.Status = InvoiceStatusValues.Approved; // Move back to approved state
                 _context.SaveChanges();
 
                 // Mark all notifications for this invoice as actioned
@@ -928,14 +928,14 @@ namespace Core.Services
                     .FirstOrDefault(i => i.Id == invoiceId)
                     ?? throw new Exception($"Invoice with ID {invoiceId} not found");
 
-                if (invoice.Status != InvoiceStatus.SellerAcceptancePending)
+                if (invoice.Status != InvoiceStatusValues.SellerAcceptancePending)
                     return ServiceResult.Failed($"Cannot reject offer for invoice with status {invoice.Status}. Invoice must be pending seller acceptance.");
                 
                 if (user.OrganizationId != invoice.SellerId)
                     return ServiceResult.Failed("You don't have permission to reject this offer");
 
                 // Update invoice - back to validated status
-                invoice.Status = InvoiceStatus.Validated;
+                invoice.Status = InvoiceStatusValues.Validated;
                 invoice.RejectionReason = reason;
                 _context.SaveChanges();
 

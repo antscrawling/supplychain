@@ -33,6 +33,22 @@ namespace Core.Models
         Overdue
     }
 
+    // Static class for Invoice Status string constants
+    public static class InvoiceStatusValues
+    {
+        public const string Uploaded = "Uploaded";
+        public const string BuyerUploaded = "BuyerUploaded";
+        public const string Validated = "Validated";
+        public const string Approved = "Approved";
+        public const string BuyerApprovalPending = "BuyerApprovalPending";
+        public const string SellerAcceptancePending = "SellerAcceptancePending";
+        public const string Rejected = "Rejected";
+        public const string Funded = "Funded";
+        public const string PartiallyPaid = "PartiallyPaid";
+        public const string FullyPaid = "FullyPaid";
+        public const string Overdue = "Overdue";
+    }
+
     public enum TransactionType
     {
         InvoiceUpload,

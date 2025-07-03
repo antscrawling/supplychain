@@ -407,7 +407,7 @@ namespace ClientPortal
                 BuyerId = _currentOrganization.Id,
                 Amount = amount,
                 Description = description,
-                Status = InvoiceStatus.BuyerUploaded // New status
+                Status = InvoiceStatusValues.BuyerUploaded // New status
             };
 
             // Upload invoice
@@ -447,7 +447,7 @@ namespace ClientPortal
                 string statusString = invoice.Status.ToString();
                 
                 // Add special indication for funded invoices
-                if (invoice.Status == InvoiceStatus.Funded && invoice.FundedAmount.HasValue)
+                if (invoice.Status == InvoiceStatusValues.Funded && invoice.FundedAmount.HasValue)
                 {
                     statusString += $" (${invoice.FundedAmount:N2})";
                 }
@@ -484,14 +484,14 @@ namespace ClientPortal
                 Console.WriteLine($"Due Date: {invoice.DueDate.ToShortDateString()}");
                 Console.WriteLine($"Amount: ${invoice.Amount:N2}");
                 
-                if (invoice.Status == InvoiceStatus.Funded || invoice.Status == InvoiceStatus.PartiallyPaid || invoice.Status == InvoiceStatus.FullyPaid)
+                if (invoice.Status == InvoiceStatusValues.Funded || invoice.Status == InvoiceStatusValues.PartiallyPaid || invoice.Status == InvoiceStatusValues.FullyPaid)
                 {
                     Console.WriteLine($"Funding Date: {invoice.FundingDate?.ToShortDateString()}");
                     Console.WriteLine($"Funded Amount: ${invoice.FundedAmount:N2}");
                     Console.WriteLine($"Discount Rate: {invoice.DiscountRate:P2}");
                 }
                 
-                if (invoice.Status == InvoiceStatus.PartiallyPaid || invoice.Status == InvoiceStatus.FullyPaid)
+                if (invoice.Status == InvoiceStatusValues.PartiallyPaid || invoice.Status == InvoiceStatusValues.FullyPaid)
                 {
                     Console.WriteLine($"Paid Amount: ${invoice.PaidAmount:N2}");
                     Console.WriteLine($"Payment Date: {invoice.PaymentDate?.ToShortDateString()}");
