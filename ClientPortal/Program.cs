@@ -703,7 +703,7 @@ namespace ClientPortal
 
             // Get invoices that can be paid
             var invoices = _invoiceService.GetInvoices(_currentOrganization.Id, true)
-                .Where(i => i.Status == InvoiceStatus.Funded || i.Status == InvoiceStatus.PartiallyPaid)
+                .Where(i => i.Status == InvoiceStatusValues.Funded || i.Status == InvoiceStatusValues.PartiallyPaid)
                 .ToList();
 
             if (!invoices.Any())
